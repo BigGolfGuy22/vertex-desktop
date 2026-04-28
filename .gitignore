@@ -1,0 +1,37 @@
+# Third-party app content (Vertex Golf APK decompilation, Dart SDK build)
+vertex.xapk
+xapk/
+blutter/
+mine.out/
+
+# Android bug report — contains PII and is huge
+bugreport/
+session*/
+vertex_bugreport.zip
+vertex_session*.zip
+btsnoop.log
+btsnoop_session*.log
+
+# iOS sysdiagnose — contains PII and is huge
+sysdiag/
+
+# Build artifacts
+design_package/
+vertex_design.zip
+__pycache__/
+*.pyc
+
+# PyInstaller output
+build/
+dist/
+*.spec
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local state
+*.local.log
+ui.html.pre-handoff.bak

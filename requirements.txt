@@ -1,0 +1,7 @@
+bleak>=0.22
+pywebview>=5
+pywin32; sys_platform == 'win32'
+# Build-time (PyInstaller is only needed to produce the .exe)
+pyinstaller>=6
+# Used only to regenerate vertex.ico if ever needed
+pillow>=10
