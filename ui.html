@@ -4549,14 +4549,6 @@
       cal[kind] = { at: Date.now(), ok };
       saveCal();
       btn.disabled = false;
-    } else if (msg.state === 'assumed') {
-      // Sensor doesn't ACK on fff1 — the docs say holding the pose for a
-      // few seconds completes the calibration on-device.
-      led.dataset.state = 'ok';
-      phase.textContent = '✓ Calibrated (assumed — sensor is silent after a few seconds)';
-      cal[kind] = { at: Date.now(), ok: true };
-      saveCal();
-      btn.disabled = false;
     } else if (msg.state === 'error') {
       led.dataset.state = 'fail';
       phase.textContent = `Error: ${msg.reason || 'unknown'}`;

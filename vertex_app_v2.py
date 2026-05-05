@@ -272,10 +272,14 @@ class BleWorker:
             return False
         h = 1 if int(hand) else 0
         self._hand = h
-        # Command layout recovered from blutter:
-        #   face: 02 00 00 00 00 H 00 00 00 00
-        #   lie:  0a 00 00 00 00 H 00 00 00 00
-        opcode = {"face": 0x02, "lie": 0x0a}.get(kind)
+        # Command layout verified from a real btsnoop capture of the official
+        # Vertex Android app (2026-05-05 cal session):
+        #   face: 01 00 00 00 00 H 00 00 00 00   (was incorrectly 0x02 — that
+        #         opcode collides with live-mode-on/off and isn't a cal)
+        #   lie:  05 00 00 00 00 H 00 00 00 00   (was incorrectly 0x0a)
+        # ACK arrives on fff1 ~9s later as `<opcode> 00 00 00 03 00 00 00 e4 44`,
+        # status byte at offset 4 = 0x03 means accepted.
+        opcode = {"face": 0x01, "lie": 0x05}.get(kind)
         if opcode is None:
             return False
         cmd = bytes([opcode, 0x00, 0x00, 0x00, 0x00, h, 0x00, 0x00, 0x00, 0x00])
@@ -301,27 +305,27 @@ class BleWorker:
                     broadcast("cal_status", which=kind, state="sending")
                     await client.write_gatt_char(FFF1, cmd, response=True)
                     broadcast("cal_status", which=kind, state="waiting")
-                    # Start a timeout: the sensor doesn't ACK calibrations on
-                    # fff1.  Per the official docs, holding the pose for "a few
-                    # seconds" is the completion signal.  If no fff1 response
-                    # arrives within this window, we assume the sensor took it.
+                    # The sensor ACKs on fff1 ~9 s after the write (verified via
+                    # btsnoop capture of the official app). Wait up to 12 s; the
+                    # on_fff1 handler clears the pending flag when the ACK lands.
                     setattr(self, pending_attr, True)
-                    await asyncio.sleep(3.0)
+                    for _ in range(120):
+                        if not getattr(self, pending_attr, False):
+                            break
+                        await asyncio.sleep(0.1)
                     if getattr(self, pending_attr, False):
                         setattr(self, pending_attr, False)
-                        broadcast("log", text=f"{kind} calibration: no fff1 ACK — assumed OK after 3 s")
-                        broadcast("cal_status", which=kind, state="assumed")
-                    # The face-cal opcode (0x02) collides with the live-mode
-                    # activation opcode — sending face cal makes the sensor
-                    # stop streaming putts.  Re-issue live mode to restart it.
-                    # (Lie cal uses 0x0a and doesn't have this problem.)
-                    if kind == "face":
-                        live_cmd = bytes([0x02, 0x01, 0x00, 0x00, 0x00, self._hand, 0, 0, 0, 0])
-                        broadcast("log", text=f"→ re-arm live mode {live_cmd.hex()}")
-                        try:
-                            await client.write_gatt_char(FFF1, live_cmd, response=True)
-                        except Exception as e:
-                            broadcast("log", text=f"⚠ live-mode re-arm failed: {e}")
+                        broadcast("log", text=f"⚠ {kind} calibration: no fff1 ACK after 12 s — sensor may not have accepted the pose")
+                        broadcast("cal_status", which=kind, state="fail",
+                                  raw="timeout")
+                    # Re-arm live mode after either cal kind. The official app
+                    # does this at the end of a cal flow (verified via capture).
+                    live_cmd = bytes([0x02, 0x01, 0x00, 0x00, 0x00, self._hand, 0, 0, 0, 0])
+                    broadcast("log", text=f"→ re-arm live mode {live_cmd.hex()}")
+                    try:
+                        await client.write_gatt_char(FFF1, live_cmd, response=True)
+                    except Exception as e:
+                        broadcast("log", text=f"⚠ live-mode re-arm failed: {e}")
                 finally:
                     # Drop whatever leaked onto fff2 during the cal window and
                     # re-open the gate for real putts.
@@ -482,18 +486,18 @@ class BleWorker:
                         broadcast("log", text=f"fff3 {len(data)}B")
 
                     def on_fff1(_c, data: bytearray):
-                        """fff1 carries general responses. If it happens to
-                        carry a calibration ACK (we haven't actually seen the
-                        sensor do this in practice — it looks like it just
-                        completes silently after a few seconds), tag it."""
+                        """fff1 carries calibration ACKs from the sensor.
+                        Verified ACK format (from 2026-05-05 capture):
+                            <echo_opcode> 00 00 00 03 00 00 00 e4 44
+                        The `e4 44` trailer is a sensor magic constant; byte 4
+                        is the status (0x03 = accepted)."""
                         b = bytes(data)
                         broadcast("log", text=f"fff1 {b.hex()}")
-                        if len(b) >= 2:
-                            cal_kind = {0x02: "face", 0x0a: "lie"}.get(b[0])
+                        if len(b) >= 5:
+                            cal_kind = {0x01: "face", 0x05: "lie"}.get(b[0])
                             if cal_kind:
-                                # Cancel the assume-ok timeout for this kind.
                                 setattr(self, f"_pending_cal_{cal_kind}", False)
-                                ok = b[1] != 0x00
+                                ok = (b[4] == 0x03)
                                 broadcast("cal_status", which=cal_kind,
                                           state="ok" if ok else "fail",
                                           raw=b.hex())
