@@ -4480,6 +4480,11 @@
     $('calBackdrop').classList.remove('open');
     $('calModal').classList.remove('open');
     $('calModal').setAttribute('aria-hidden', 'true');
+    // Tell the backend to re-arm live mode now that the cal flow is done.
+    // We deliberately don't re-arm between face and lie cal — the official
+    // app re-arms only once at the end and re-arming mid-flow corrupts the
+    // next cal's reference.
+    fetch('/finish-calibration', { method: 'POST' }).catch(() => {});
   }
   function renderCalibrationPanel() {
     for (const kind of ['face', 'lie']) {

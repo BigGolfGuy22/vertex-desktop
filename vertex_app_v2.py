@@ -254,7 +254,7 @@ class BleWorker:
         # The live BleakClient while connected, so HTTP handlers on other
         # threads can schedule writes onto our asyncio loop.
         self._client = None
-        self._hand: int = 1  # 1 = right-hand, 0 = left-hand; set via /calibrate
+        self._hand: int = 1  # byte[5] in commands; default lefty (matches HAND_BYTE)
         # fff2 putt-packet reassembly buffer.  Shared across threads so
         # send_calibration() can drain it around a calibration round-trip —
         # the sensor emits response/diagnostic frames on fff2 during cal that
@@ -318,14 +318,12 @@ class BleWorker:
                         broadcast("log", text=f"⚠ {kind} calibration: no fff1 ACK after 12 s — sensor may not have accepted the pose")
                         broadcast("cal_status", which=kind, state="fail",
                                   raw="timeout")
-                    # Re-arm live mode after either cal kind. The official app
-                    # does this at the end of a cal flow (verified via capture).
-                    live_cmd = bytes([0x02, 0x01, 0x00, 0x00, 0x00, self._hand, 0, 0, 0, 0])
-                    broadcast("log", text=f"→ re-arm live mode {live_cmd.hex()}")
-                    try:
-                        await client.write_gatt_char(FFF1, live_cmd, response=True)
-                    except Exception as e:
-                        broadcast("log", text=f"⚠ live-mode re-arm failed: {e}")
+                    # Note: we deliberately do NOT re-arm live mode here. The
+                    # official app re-arms live mode ONCE at the end of the
+                    # full cal flow (face → lie), not between cals. Re-arming
+                    # in between appears to drop the sensor out of the
+                    # calibration-ready state and corrupt the next cal's
+                    # reference. /finish-calibration is the explicit re-arm.
                 finally:
                     # Drop whatever leaked onto fff2 during the cal window and
                     # re-open the gate for real putts.
@@ -338,6 +336,28 @@ class BleWorker:
                 self._cal_in_flight = False
 
         asyncio.run_coroutine_threadsafe(_do_write(), self._loop)
+        return True
+
+    def resume_live_mode(self) -> bool:
+        """Re-issue the live-mode-on opcode. Called after a full cal flow,
+        matching the official app which only re-arms live mode once at the
+        end of calibration (not between cal kinds)."""
+        if self._loop is None or self._client is None:
+            return False
+        live_cmd = bytes([0x02, 0x01, 0x00, 0x00, 0x00, self._hand, 0, 0, 0, 0])
+
+        async def _do():
+            try:
+                client = self._client
+                if client is None or not client.is_connected:
+                    broadcast("log", text="⚠ resume live: not connected")
+                    return
+                broadcast("log", text=f"→ resume live mode {live_cmd.hex()}")
+                await client.write_gatt_char(FFF1, live_cmd, response=True)
+            except Exception as e:
+                broadcast("log", text=f"⚠ resume live failed: {e}")
+
+        asyncio.run_coroutine_threadsafe(_do(), self._loop)
         return True
 
     def running(self) -> bool:
@@ -763,9 +783,15 @@ class Handler(BaseHTTPRequestHandler):
             kind = "face" if path.endswith("/face") else "lie"
             ok = worker.send_calibration(kind, hand)
             if ok:
-                self._send_json({"ok": True, "kind": kind, "hand": "L" if hand == 0 else "R"})
+                self._send_json({"ok": True, "kind": kind, "hand": "L" if hand == 1 else "R"})
             else:
                 self._send_json({"ok": False, "error": "not_connected"})
+        elif path == "/finish-calibration":
+            # Re-arm live mode after a full cal flow. The official Vertex app
+            # only re-arms once, at the end — re-arming between face and lie
+            # cals drops the sensor out of cal-ready state.
+            ok = worker.resume_live_mode()
+            self._send_json({"ok": bool(ok)})
         else:
             self.send_error(404)
 
