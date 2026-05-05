@@ -751,12 +751,15 @@ class Handler(BaseHTTPRequestHandler):
             # Trigger a device-side calibration write on fff1. Expects the
             # hand in the query string: ?hand=L or ?hand=R (defaults to R).
             qs = urlparse(self.path).query or ""
-            hand_raw = "R"
+            hand_raw = "L"
             for kv in qs.split("&"):
                 if kv.startswith("hand="):
                     hand_raw = kv.split("=", 1)[1]
                     break
-            hand = 0 if hand_raw.upper().startswith("L") else 1
+            # Per the captured official-app traffic, byte[5] = 0x01 when the
+            # user is set to left-handed (matches our HAND_BYTE constant which
+            # is the lefty default for this user). Right-hand sends 0x00.
+            hand = 1 if hand_raw.upper().startswith("L") else 0
             kind = "face" if path.endswith("/face") else "lie"
             ok = worker.send_calibration(kind, hand)
             if ok:
