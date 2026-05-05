@@ -318,12 +318,10 @@ class BleWorker:
                         broadcast("log", text=f"⚠ {kind} calibration: no fff1 ACK after 12 s — sensor may not have accepted the pose")
                         broadcast("cal_status", which=kind, state="fail",
                                   raw="timeout")
-                    # Note: we deliberately do NOT re-arm live mode here. The
-                    # official app re-arms live mode ONCE at the end of the
-                    # full cal flow (face → lie), not between cals. Re-arming
-                    # in between appears to drop the sensor out of the
-                    # calibration-ready state and corrupt the next cal's
-                    # reference. /finish-calibration is the explicit re-arm.
+                    # No live-mode re-arm. With the correct cal opcodes
+                    # (0x01 face, 0x05 lie) the sensor stays in live mode
+                    # throughout — the captured official-app session shows
+                    # cal commands didn't interrupt fff2/fff3 streaming.
                 finally:
                     # Drop whatever leaked onto fff2 during the cal window and
                     # re-open the gate for real putts.
