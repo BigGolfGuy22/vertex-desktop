@@ -259,9 +259,9 @@
 
   /* ─────────── Page structure ─────────── */
   .page {
-    max-width: 1400px;
+    max-width: 1640px;
     margin: 0 auto;
-    padding: 14px 24px 40px;
+    padding: 14px 14px 40px;
   }
   /* Content block separator (inline, cards have their own borders) */
   .block { padding: 0; }
@@ -619,30 +619,31 @@
   }
   .gauges .gauge { min-width: 76px; }
 
-  /* ─────────── Impact row (lie angle + tempo side by side) ─────────── */
-  .impact-row {
+  /* ─────────── Direction row (face-at-impact + lie-angle side by side) ─────────── */
+  .direction-row {
     display: grid;
     grid-template-columns: 3fr 2fr;
     gap: 0;
-    margin-top: 10px;
     align-items: stretch;
   }
-  .impact-row > .card { margin: 0; height: 100%; }
-  .impact-row > .card + .card { border-left: 0; }
-  .impact-row .lie-stage {
-    grid-template-columns: 180px 1fr 130px;
-    gap: 18px;
+  .direction-row > .card { margin: 0; height: 100%; }
+  .direction-row > .card + .card { border-left: 0; }
+  .direction-row .lie-stage {
+    grid-template-columns: 160px 1fr 120px;
+    gap: 14px;
+    padding: 14px 8px 8px;
   }
-  .impact-row .lie-rings .ring-gauge { width: 58px; }
-  .impact-row .lie-rings .ring-gauge svg { width: 54px; height: 54px; }
-  .impact-row .lie-readout .lie-big { font-size: 58px; }
-  .impact-row .lie-readout .lie-big .unit { font-size: 18px; }
-  @media (max-width: 1200px) {
-    .impact-row { grid-template-columns: 1fr; }
-    .impact-row > .card + .card { border-left: 1px solid var(--rule-dark); margin-top: 10px; }
-    .impact-row .lie-stage {
+  .direction-row .lie-rings .ring-gauge { width: 56px; }
+  .direction-row .lie-rings .ring-gauge svg { width: 52px; height: 52px; }
+  .direction-row .lie-readout .lie-big { font-size: 56px; }
+  .direction-row .lie-readout .lie-big .unit { font-size: 18px; }
+  @media (max-width: 1300px) {
+    .direction-row { grid-template-columns: 1fr; }
+    .direction-row > .card + .card { border-left: 1px solid var(--rule-dark); margin-top: 10px; }
+    .direction-row .lie-stage {
       grid-template-columns: 240px 1fr 150px;
       gap: 28px;
+      padding: 18px 8px 10px;
     }
   }
 
@@ -800,20 +801,125 @@
     .grid2, .grid3, .grid4 { grid-template-columns: 1fr; }
   }
 
-  /* Rotation row: face-rotation and rotation-zone cards sharing a central rule */
+  /* Kinetics row: shares the rotation-row's flush, no-gap, shared-border style
+     so the cards line up edge-for-edge with the cards above. Multi-row
+     variant — collapse left borders for cols 2/3 of each row, and top borders
+     for everything from row 2 down. */
+  .kinetics-row {
+    gap: 0 !important;
+    margin-top: 0;
+  }
+  .kinetics-row > .card { margin: 0; }
+  /* Cards in row 2+ of the kinetics grid share the row above's bottom border */
+  .kinetics-row > .card:nth-child(n+4) { border-top: 0; }
+  .kinetics-row > .card:nth-child(3n+2),
+  .kinetics-row > .card:nth-child(3n+3) { border-left: 0; }
+  @media (max-width: 900px) {
+    /* Single-column fallback: restore borders all around. */
+    .kinetics-row > .card { border-left: 1px solid var(--rule-dark); border-top: 1px solid var(--rule-dark); }
+  }
+
+  /* Rotation row: face-rotation, tempo, rotation-zone — three cards sharing internal rules.
+     align-items: stretch so all three cards in the row are the same height. */
   .rotation-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 0;
-    align-items: start;
+    align-items: stretch;
   }
-  @media (max-width: 1200px) {
+  /* Tempo card: flex column with the empty space distributed evenly between
+     children, so the timing chart sits in the middle of the (stretched) card
+     instead of being hugged up against the title. */
+  .rotation-row .tempo-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .rotation-row .tempo-card .timing-chart { flex: 0 0 auto; }
+  .rotation-row .tempo-card .last5-tempo { margin-top: 0; }
+  @media (max-width: 1300px) {
+    .rotation-row { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 900px) {
     .rotation-row { grid-template-columns: 1fr; }
     .rotation-row > .card + .card { border-left: 1px solid var(--rule-dark); }
   }
   .rotation-row > .card { margin: 0; }
-  /* Collapse the doubled border where the two cards meet */
+  /* Collapse the doubled border where adjacent cards meet */
   .rotation-row > .card + .card { border-left: 0; }
+  /* Tempo card inside rotation-row — fits 3 columns by stacking the rhythm
+     box BELOW the bars, so the track gets the full card width. Compact
+     name labels, hidden tick labels, and a single-line rhythm summary keep
+     everything from wrapping at 1/3-page-width. */
+  .rotation-row .tempo-card .timing-chart {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .rotation-row .tempo-card .timebar {
+    grid-template-columns: 64px 1fr 56px;
+    gap: 8px;
+  }
+  .rotation-row .tempo-card .timebar .name {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .rotation-row .tempo-card .timebar .reading {
+    font-size: 16px;
+    white-space: nowrap;
+  }
+  .rotation-row .tempo-card .timebar .reading .unit { font-size: 9px; }
+  /* Tick labels above the first bar are too crowded at this width — hide
+     them; the tour-avg marker and the reading carry the info. */
+  .rotation-row .tempo-card .tick-label { display: none; }
+  .rotation-row .tempo-card .rhythm-box {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 12px;
+  }
+  .rotation-row .tempo-card .rhythm-box .kind {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    white-space: nowrap;
+  }
+  .rotation-row .tempo-card .rhythm-box .ratio {
+    font-size: 26px;
+    line-height: 1;
+  }
+  .rotation-row .tempo-card .rhythm-box .note { display: none; }
+  .rotation-row .tempo-card .session-avg {
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Tempo's Last 5 — horizontal row of entries below the timing chart, so
+     the card height matches Face Rotation / Rotation Zone in the same row. */
+  .last5-tempo {
+    border-right: 0;
+    border-top: 1px solid var(--rule);
+    padding: 12px 4px 4px;
+    margin-top: 12px;
+    display: block;
+  }
+  .last5-tempo .heading { margin-bottom: 8px; }
+  .last5-tempo .entries {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .last5-tempo .entry {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+    font-size: 12px;
+  }
+  .last5-tempo .entry .dash { width: 100%; height: 2px; }
 
   /* compact metric card */
   .metric {
@@ -2372,6 +2478,9 @@
 <div class="page" id="mainView" style="display:none">
 
 <!-- ═══ DIRECTION ═══ -->
+<!-- Two top cards side by side: Face at impact + Lie angle at impact -->
+<div class="direction-row">
+
 <div class="card">
   <div class="bracket-tr"></div><div class="bracket-bl"></div>
   <div class="card-title">
@@ -2441,6 +2550,59 @@
     </div>
   </div>
 </div>
+
+<div class="card lie-card">
+  <div class="bracket-tr"></div><div class="bracket-bl"></div>
+  <div class="card-title">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <line x1="4" y1="19" x2="20" y2="19"/>
+        <line x1="8" y1="19" x2="14" y2="5"/>
+      </svg>
+    </div>
+    <div class="title-group">
+      <h3>Lie angle at impact</h3>
+    </div>
+    <button class="info-btn" aria-label="About this metric" onclick="openInfoPanel('lie_angle')">?</button>
+  </div>
+
+  <div class="lie-stage">
+    <div class="lie-readout">
+      <div class="lie-label">At impact</div>
+      <div class="lie-big">
+        <span id="lie-val">—.—</span><span class="unit">°</span>
+      </div>
+      <div class="lie-dir" id="lie-dir">—</div>
+      <div class="lie-compare">
+        <div class="lie-compare-row">
+          <span class="k">At address</span>
+          <span class="v mono"><span id="lie-addr-val">—.—</span>°</span>
+        </div>
+        <div class="lie-compare-row">
+          <span class="k">Δ change</span>
+          <span class="v mono" id="lie-delta">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lie-face-wrap" id="lie-face-wrap">
+      <img src="assets/faceon.png" class="lie-face-img" id="lie-face-img" alt="">
+      <!-- Ground line + angle dimension drawn by renderLieFace() -->
+      <svg class="lie-angle-svg" id="lie-angle-svg" viewBox="0 0 400 60" preserveAspectRatio="none"></svg>
+      <div class="lie-hand-labels">
+        <span class="lbl lbl-toe" id="lie-lbl-toe">TOE</span>
+        <span class="lbl lbl-heel" id="lie-lbl-heel">HEEL</span>
+      </div>
+    </div>
+
+    <div class="ring-pair lie-rings">
+      <div class="ring-gauge"><svg id="lie-acc-ring" viewBox="0 0 100 100"></svg><div class="ring-label">accuracy</div></div>
+      <div class="ring-gauge"><svg id="lie-cons-ring" viewBox="0 0 100 100"></svg><div class="ring-label">consistency</div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /.direction-row -->
 
 <!-- Not-available row for Direction -->
 <div style="margin-top: 16px;" class="grid2">
@@ -2550,6 +2712,89 @@
   </div>
 </div>
 
+<!-- Stroke timing / Tempo (between the two rotation cards) -->
+<div class="card tempo-card">
+  <div class="bracket-tr"></div><div class="bracket-bl"></div>
+  <div class="card-title">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <circle cx="12" cy="13" r="8"/>
+        <line x1="12" y1="8" x2="12" y2="13"/>
+        <line x1="12" y1="13" x2="16" y2="15"/>
+        <line x1="9" y1="3" x2="15" y2="3"/>
+      </svg>
+    </div>
+    <div class="title-group">
+      <h3>Tempo</h3>
+    </div>
+    <button class="info-btn" aria-label="About this metric" onclick="openInfoPanel('stroke_timing')">?</button>
+  </div>
+
+  <div class="timing-chart">
+    <div class="bars" id="timing-bars">
+      <div class="timebar">
+        <div class="name">Backswing time</div>
+        <div class="track">
+          <div class="fill" id="bst-bar" style="width:0%"></div>
+          <div class="tick" style="left:0%"></div><div class="tick-label" style="left:0%">0</div>
+          <div class="tick" style="left:25%"></div><div class="tick-label" style="left:25%">500</div>
+          <div class="tick" style="left:50%"></div><div class="tick-label" style="left:50%">1000</div>
+          <div class="tick" style="left:75%"></div><div class="tick-label" style="left:75%">1500</div>
+          <div class="tick" style="left:100%"></div><div class="tick-label" style="left:100%">2000</div>
+          <!-- Tour-average marker at 770ms of 2000ms range = 38.5% -->
+          <div class="tour-avg" style="left:38.5%" title="Tour avg 770ms"></div>
+        </div>
+        <div class="reading" id="bst-reading"><span id="bst-val">—</span><span class="unit">ms</span></div>
+      </div>
+      <div class="timebar">
+        <div class="name">Forward time</div>
+        <div class="track">
+          <div class="fill" id="fst-bar" style="width:0%"></div>
+          <div class="tick" style="left:0%"></div>
+          <div class="tick" style="left:25%"></div>
+          <div class="tick" style="left:50%"></div>
+          <div class="tick" style="left:75%"></div>
+          <div class="tick" style="left:100%"></div>
+          <!-- Tour-average marker at 380ms = 19% -->
+          <div class="tour-avg" style="left:19%" title="Tour avg 380ms"></div>
+        </div>
+        <div class="reading" id="fst-reading"><span id="fst-val">—</span><span class="unit">ms</span></div>
+      </div>
+      <div class="timebar">
+        <div class="name">Total stroke time</div>
+        <div class="track">
+          <div class="fill" id="tst-bar" style="width:0%"></div>
+          <div class="tick" style="left:0%"></div>
+          <div class="tick" style="left:25%"></div>
+          <div class="tick" style="left:50%"></div>
+          <div class="tick" style="left:75%"></div>
+          <div class="tick" style="left:100%"></div>
+          <!-- Tour-average marker at 1150ms = 57.5% -->
+          <div class="tour-avg" style="left:57.5%" title="Tour avg 1150ms"></div>
+        </div>
+        <div class="reading" id="tst-reading"><span id="tst-val">—</span><span class="unit">ms</span></div>
+      </div>
+    </div>
+    <div class="rhythm-box">
+      <div class="kind">Rhythm ratio</div>
+      <div class="ratio"><span id="rhy-val">–.–</span></div>
+      <div class="note">back / forward<br>ideal ≈ 2.0</div>
+    </div>
+  </div>
+
+  <!-- Last 5 rhythm ratios (matches the height of Face Rotation / Rotation Zone) -->
+  <div class="last5 last5-tempo" id="tempo-last5">
+    <div class="heading">Last 5 · rhythm</div>
+    <div class="entries">
+      <div class="entry empty"><span class="dash" style="background:var(--chart-blue)"></span><span class="val">–.––</span></div>
+      <div class="entry empty"><span class="dash" style="background:var(--chart-amber)"></span><span class="val">–.––</span></div>
+      <div class="entry empty"><span class="dash" style="background:var(--chart-red)"></span><span class="val">–.––</span></div>
+      <div class="entry empty"><span class="dash" style="background:var(--chart-green)"></span><span class="val">–.––</span></div>
+      <div class="entry empty"><span class="dash" style="background:var(--chart-magenta)"></span><span class="val">–.––</span></div>
+    </div>
+  </div>
+</div>
+
 <!-- Rotation zone -->
 <div class="card">
   <div class="bracket-tr"></div><div class="bracket-bl"></div>
@@ -2636,188 +2881,36 @@
 
 </div><!-- /.rotation-row -->
 
-<!-- Lie angle + Tempo side by side -->
-<div class="impact-row">
-
-<div class="card lie-card">
-  <div class="bracket-tr"></div><div class="bracket-bl"></div>
-  <div class="card-title">
-    <div class="icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-        <line x1="4" y1="19" x2="20" y2="19"/>
-        <line x1="8" y1="19" x2="14" y2="5"/>
-      </svg>
-    </div>
-    <div class="title-group">
-      <h3>Lie angle at impact</h3>
-    </div>
-    <button class="info-btn" aria-label="About this metric" onclick="openInfoPanel('lie_angle')">?</button>
-  </div>
-
-  <div class="lie-stage">
-    <div class="lie-readout">
-      <div class="lie-label">At impact</div>
-      <div class="lie-big">
-        <span id="lie-val">—.—</span><span class="unit">°</span>
-      </div>
-      <div class="lie-dir" id="lie-dir">—</div>
-      <div class="lie-compare">
-        <div class="lie-compare-row">
-          <span class="k">At address</span>
-          <span class="v mono"><span id="lie-addr-val">—.—</span>°</span>
-        </div>
-        <div class="lie-compare-row">
-          <span class="k">Δ change</span>
-          <span class="v mono" id="lie-delta">—</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="lie-face-wrap" id="lie-face-wrap">
-      <img src="assets/faceon.png" class="lie-face-img" id="lie-face-img" alt="">
-      <!-- Ground line + angle dimension drawn by renderLieFace() -->
-      <svg class="lie-angle-svg" id="lie-angle-svg" viewBox="0 0 400 60" preserveAspectRatio="none"></svg>
-      <div class="lie-hand-labels">
-        <span class="lbl lbl-toe" id="lie-lbl-toe">TOE</span>
-        <span class="lbl lbl-heel" id="lie-lbl-heel">HEEL</span>
-      </div>
-    </div>
-
-    <div class="ring-pair lie-rings">
-      <div class="ring-gauge"><svg id="lie-acc-ring" viewBox="0 0 100 100"></svg><div class="ring-label">accuracy</div></div>
-      <div class="ring-gauge"><svg id="lie-cons-ring" viewBox="0 0 100 100"></svg><div class="ring-label">consistency</div></div>
-    </div>
-  </div>
-</div>
-
-<!-- Stroke timing / Tempo -->
-<div class="card tempo-card">
-  <div class="bracket-tr"></div><div class="bracket-bl"></div>
-  <div class="card-title">
-    <div class="icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-        <circle cx="12" cy="13" r="8"/>
-        <line x1="12" y1="8" x2="12" y2="13"/>
-        <line x1="12" y1="13" x2="16" y2="15"/>
-        <line x1="9" y1="3" x2="15" y2="3"/>
-      </svg>
-    </div>
-    <div class="title-group">
-      <h3>Tempo</h3>
-    </div>
-    <button class="info-btn" aria-label="About this metric" onclick="openInfoPanel('stroke_timing')">?</button>
-  </div>
-
-  <div class="timing-chart">
-    <div class="bars" id="timing-bars">
-      <div class="timebar">
-        <div class="name">Backswing time</div>
-        <div class="track">
-          <div class="fill" id="bst-bar" style="width:0%"></div>
-          <div class="tick" style="left:0%"></div><div class="tick-label" style="left:0%">0</div>
-          <div class="tick" style="left:25%"></div><div class="tick-label" style="left:25%">500</div>
-          <div class="tick" style="left:50%"></div><div class="tick-label" style="left:50%">1000</div>
-          <div class="tick" style="left:75%"></div><div class="tick-label" style="left:75%">1500</div>
-          <div class="tick" style="left:100%"></div><div class="tick-label" style="left:100%">2000</div>
-          <!-- Tour-average marker at 770ms of 2000ms range = 38.5% -->
-          <div class="tour-avg" style="left:38.5%" title="Tour avg 770ms"></div>
-        </div>
-        <div class="reading" id="bst-reading"><span id="bst-val">—</span><span class="unit">ms</span></div>
-      </div>
-      <div class="timebar">
-        <div class="name">Forward time</div>
-        <div class="track">
-          <div class="fill" id="fst-bar" style="width:0%"></div>
-          <div class="tick" style="left:0%"></div>
-          <div class="tick" style="left:25%"></div>
-          <div class="tick" style="left:50%"></div>
-          <div class="tick" style="left:75%"></div>
-          <div class="tick" style="left:100%"></div>
-          <!-- Tour-average marker at 380ms = 19% -->
-          <div class="tour-avg" style="left:19%" title="Tour avg 380ms"></div>
-        </div>
-        <div class="reading" id="fst-reading"><span id="fst-val">—</span><span class="unit">ms</span></div>
-      </div>
-      <div class="timebar">
-        <div class="name">Total stroke time</div>
-        <div class="track">
-          <div class="fill" id="tst-bar" style="width:0%"></div>
-          <div class="tick" style="left:0%"></div>
-          <div class="tick" style="left:25%"></div>
-          <div class="tick" style="left:50%"></div>
-          <div class="tick" style="left:75%"></div>
-          <div class="tick" style="left:100%"></div>
-          <!-- Tour-average marker at 1150ms = 57.5% -->
-          <div class="tour-avg" style="left:57.5%" title="Tour avg 1150ms"></div>
-        </div>
-        <div class="reading" id="tst-reading"><span id="tst-val">—</span><span class="unit">ms</span></div>
-      </div>
-    </div>
-    <div class="rhythm-box">
-      <div class="kind">Rhythm ratio</div>
-      <div class="ratio"><span id="rhy-val">–.–</span></div>
-      <div class="note">back / forward<br>ideal ≈ 2.0</div>
-    </div>
-  </div>
-</div>
-
-</div><!-- /.impact-row -->
-
 <!-- ═══ KINETICS ═══ -->
-<div class="grid3">
-  <!-- Club head speed -->
+<div class="grid3 kinetics-row">
+  <!-- Loft angle (top-left) -->
   <div class="card">
     <div class="bracket-tr"></div><div class="bracket-bl"></div>
     <div class="card-title">
       <div class="icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-          <line x1="4" y1="12" x2="18" y2="12"/>
-          <polyline points="14,7 19,12 14,17"/>
-          <line x1="20" y1="6" x2="20" y2="18" stroke-width="1"/>
+          <line x1="4" y1="20" x2="20" y2="20"/>
+          <path d="M 7 20 L 14 8 L 19 11"/>
         </svg>
       </div>
       <div class="title-group">
-        <h3>Club head speed</h3>
+        <h3>Loft angle at impact</h3>
       </div>
-    <button class="info-btn" aria-label="About this metric" onclick="openInfoPanel('club_head_speed')">?</button>
-  </div>
-    <div class="metric no-viz">
-      <div class="value">
-        <div class="label">At impact</div>
-        <div class="big"><span id="chs-val">—.——</span><span class="unit">m/s</span></div>
-        <div class="dir" id="chs-ten">—</div>
-      </div>
-      <div class="ring-pair">
-        <div class="ring-gauge"><svg id="chs-acc-ring" viewBox="0 0 100 100"></svg><div class="ring-label">accuracy</div></div>
-        <div class="ring-gauge"><svg id="chs-cons-ring" viewBox="0 0 100 100"></svg><div class="ring-label">consistency</div></div>
-      </div>
+      <button class="info-btn" aria-label="About this metric" onclick="openInfoPanel('loft_angle')">?</button>
     </div>
-  </div>
-
-  <!-- Club head acceleration -->
-  <div class="card">
-    <div class="bracket-tr"></div><div class="bracket-bl"></div>
-    <div class="card-title">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-          <polyline points="4,18 9,13 13,16 20,6"/>
-          <polyline points="20,11 20,6 15,6"/>
-        </svg>
-      </div>
-      <div class="title-group">
-        <h3>Club head acceleration</h3>
-      </div>
-    <button class="info-btn" aria-label="About this metric" onclick="openInfoPanel('club_head_accel')">?</button>
-  </div>
     <div class="metric no-viz">
       <div class="value">
         <div class="label">At impact</div>
-        <div class="big"><span id="cha-val">—.——</span><span class="unit">m/s²</span></div>
-        <div class="dir" id="cha-dir">—</div>
+        <div class="big"><span id="loi-val">—.—</span><span class="unit">°</span></div>
+        <div class="dir" id="loi-dir">—</div>
+        <div class="sub-breakdown mono">
+          <span>addr <span id="loa-val">—.—</span>°</span>
+          <span>Δ <span id="loc-val">—.—</span>°</span>
+        </div>
       </div>
       <div class="ring-pair">
-        <div class="ring-gauge"><svg id="cha-acc-ring" viewBox="0 0 100 100"></svg><div class="ring-label">accuracy</div></div>
-        <div class="ring-gauge"><svg id="cha-cons-ring" viewBox="0 0 100 100"></svg><div class="ring-label">consistency</div></div>
+        <div class="ring-gauge"><svg id="loi-acc-ring" viewBox="0 0 100 100"></svg><div class="ring-label">accuracy</div></div>
+        <div class="ring-gauge"><svg id="loi-cons-ring" viewBox="0 0 100 100"></svg><div class="ring-label">consistency</div></div>
       </div>
     </div>
   </div>
@@ -2855,38 +2948,6 @@
     </div>
   </div>
 
-  <!-- Loft angle -->
-  <div class="card">
-    <div class="bracket-tr"></div><div class="bracket-bl"></div>
-    <div class="card-title">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-          <line x1="4" y1="20" x2="20" y2="20"/>
-          <path d="M 7 20 L 14 8 L 19 11"/>
-        </svg>
-      </div>
-      <div class="title-group">
-        <h3>Loft angle at impact</h3>
-      </div>
-      <button class="info-btn" aria-label="About this metric" onclick="openInfoPanel('loft_angle')">?</button>
-    </div>
-    <div class="metric no-viz">
-      <div class="value">
-        <div class="label">At impact</div>
-        <div class="big"><span id="loi-val">—.—</span><span class="unit">°</span></div>
-        <div class="dir" id="loi-dir">—</div>
-        <div class="sub-breakdown mono">
-          <span>addr <span id="loa-val">—.—</span>°</span>
-          <span>Δ <span id="loc-val">—.—</span>°</span>
-        </div>
-      </div>
-      <div class="ring-pair">
-        <div class="ring-gauge"><svg id="loi-acc-ring" viewBox="0 0 100 100"></svg><div class="ring-label">accuracy</div></div>
-        <div class="ring-gauge"><svg id="loi-cons-ring" viewBox="0 0 100 100"></svg><div class="ring-label">consistency</div></div>
-      </div>
-    </div>
-  </div>
-
   <!-- Gear effect twist -->
   <div class="card">
     <div class="bracket-tr"></div><div class="bracket-bl"></div>
@@ -2912,6 +2973,63 @@
       <div class="ring-pair">
         <div class="ring-gauge"><svg id="get-acc-ring" viewBox="0 0 100 100"></svg><div class="ring-label">accuracy</div></div>
         <div class="ring-gauge"><svg id="get-cons-ring" viewBox="0 0 100 100"></svg><div class="ring-label">consistency</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Club head acceleration -->
+  <div class="card">
+    <div class="bracket-tr"></div><div class="bracket-bl"></div>
+    <div class="card-title">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <polyline points="4,18 9,13 13,16 20,6"/>
+          <polyline points="20,11 20,6 15,6"/>
+        </svg>
+      </div>
+      <div class="title-group">
+        <h3>Club head acceleration</h3>
+      </div>
+    <button class="info-btn" aria-label="About this metric" onclick="openInfoPanel('club_head_accel')">?</button>
+  </div>
+    <div class="metric no-viz">
+      <div class="value">
+        <div class="label">At impact</div>
+        <div class="big"><span id="cha-val">—.——</span><span class="unit">m/s²</span></div>
+        <div class="dir" id="cha-dir">—</div>
+      </div>
+      <div class="ring-pair">
+        <div class="ring-gauge"><svg id="cha-acc-ring" viewBox="0 0 100 100"></svg><div class="ring-label">accuracy</div></div>
+        <div class="ring-gauge"><svg id="cha-cons-ring" viewBox="0 0 100 100"></svg><div class="ring-label">consistency</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Club head speed -->
+  <div class="card">
+    <div class="bracket-tr"></div><div class="bracket-bl"></div>
+    <div class="card-title">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <line x1="4" y1="12" x2="18" y2="12"/>
+          <polyline points="14,7 19,12 14,17"/>
+          <line x1="20" y1="6" x2="20" y2="18" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="title-group">
+        <h3>Club head speed</h3>
+      </div>
+      <button class="info-btn" aria-label="About this metric" onclick="openInfoPanel('club_head_speed')">?</button>
+    </div>
+    <div class="metric no-viz">
+      <div class="value">
+        <div class="label">At impact</div>
+        <div class="big"><span id="chs-val">—.——</span><span class="unit">m/s</span></div>
+        <div class="dir" id="chs-ten">—</div>
+      </div>
+      <div class="ring-pair">
+        <div class="ring-gauge"><svg id="chs-acc-ring" viewBox="0 0 100 100"></svg><div class="ring-label">accuracy</div></div>
+        <div class="ring-gauge"><svg id="chs-cons-ring" viewBox="0 0 100 100"></svg><div class="ring-label">consistency</div></div>
       </div>
     </div>
   </div>
@@ -3852,6 +3970,38 @@
     }
   }
 
+  // Last 5 rhythm ratios for the Tempo card. Bar color reflects quality
+  // against the tour-average ideal (2.0): ±0.2 = green, ±0.4 = yellow, else red.
+  // Same thresholds the timing bars use so the bars and the last-5 strip
+  // always agree visually.
+  function updateLast5TempoList() {
+    const hist = putts.slice(-5).map(p => p.rhythm);
+    const el = $('tempo-last5');
+    if (!el) return;
+    const colorForRhythm = (v) => {
+      const d = Math.abs(v - 2.0);
+      if (d <= 0.2) return 'var(--good)';
+      if (d <= 0.4) return 'var(--warn)';
+      return 'var(--bad)';
+    };
+    let html = '<div class="heading">Last 5 · rhythm</div><div class="entries">';
+    for (let i = 0; i < 5; i++) {
+      const v = hist[hist.length - 1 - i];
+      const isNum = typeof v === 'number';
+      const color = isNum ? colorForRhythm(v) : 'var(--rule)';
+      const valStr = isNum ? v.toFixed(2) : '—.——';
+      const cls = isNum ? '' : ' empty';
+      html += `
+        <div class="entry${cls}">
+          <span class="dash" style="background:${color}"></span>
+          <span class="val">${valStr}</span>
+        </div>
+      `;
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
   // ============================================================
   // MAIN RENDERER
   // ============================================================
@@ -3901,6 +4051,7 @@
 
     // Last-5 values & ticks on target line
     updateLast5FaceList();
+    updateLast5TempoList();
     const last5 = putts.slice(-5).reverse().map(x => x.face_change);
     renderFaceOverlay('face-overlay', fc, last5);
 
