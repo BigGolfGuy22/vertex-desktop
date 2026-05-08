@@ -4559,10 +4559,16 @@
   // ============================================================
   // CSV EXPORT & SESSION PERSISTENCE
   // ============================================================
+  // CSV columns mirror everything COMPACT_METRICS renders (one row per putt).
+  // `face_at_impact` is an alias for `face_change` — the hero card displays
+  // it as "Face at impact" but it's stored under face_change in the dataclass.
+  // Both column names are exported with the same value so users can find it
+  // either way.
   const CSV_COLS = [
     'index', 'timestamp_iso',
     'back_stroke_time', 'forward_stroke_time', 'total_stroke_time', 'rhythm',
-    'back_stroke_rotation', 'forward_stroke_rotation', 'face_change',
+    'back_stroke_rotation', 'forward_stroke_rotation',
+    'face_at_impact', 'face_change',
     'club_head_speed', 'club_head_accel', 'club_head_accel_decel',
     'inplane_rotation_back', 'inplane_rotation_forward',
     'gear_effect_twist',
@@ -4581,6 +4587,10 @@
       return CSV_COLS.map(c => {
         if (c === 'timestamp_iso') {
           return new Date(cal.timestamp * 1000).toISOString();
+        }
+        if (c === 'face_at_impact') {
+          const v = cal.face_change;
+          return (v === null || v === undefined) ? '' : v;
         }
         const v = cal[c];
         if (typeof v === 'boolean') return v ? '1' : '0';
